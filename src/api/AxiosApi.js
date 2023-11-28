@@ -7,32 +7,38 @@ const AxiosApi = {
     console.log("로그인 : ", email, pw);
     const login = {
       email: email,
-      pwd: pw,
+      password: pw,
     };
-    return await axios.post(KH_DOMAIN + "/users/login", login);
+    return await axios.post(KH_DOMAIN + "/auth/login", login);
   },
   //회원 전체 조회
   memberGet: async () => {
     return await axios.get(KH_DOMAIN + `/users/list`);
   },
   // 회원 조회
-  memberGetOne: async (email) => {
-    return await axios.get(KH_DOMAIN + `/users/detail/${email}`);
+  memberGetOne: async () => {
+    const accessToken = localStorage.getItem("accessToken");
+    return await axios.get(KH_DOMAIN + `/users/detail`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + accessToken,
+      },
+    });
   },
 
   // 회원 가입
   memberReg: async (email, pwd, name) => {
     const member = {
       email: email,
-      pwd: pwd,
+      password: pwd,
       name: name,
     };
-    return await axios.post(KH_DOMAIN + "/users/new", member);
+    return await axios.post(KH_DOMAIN + "/auth/signup", member);
   },
   // 회원 가입 여부 확인
   memberRegCheck: async (email) => {
     console.log("가입 가능 여부 확인 : ", email);
-    return await axios.get(KH_DOMAIN + `/users/check?email=${email}`);
+    return await axios.get(KH_DOMAIN + `/auth/exists/${email}`);
   },
   // 회원 정보 수정
   memberUpdate: async (email, name, image) => {
