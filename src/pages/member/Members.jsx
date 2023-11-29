@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { formatDate } from "../../utils/Common";
+import Common from "../../utils/Common";
 import AxiosApi from "../../api/AxiosApi";
 import { useNavigate } from "react-router-dom";
 import styled from "styled-components";
@@ -57,16 +57,23 @@ const MemberJoinDate = styled.span`
 const Members = () => {
   const navigate = useNavigate();
   const [memberInfo, setMemberInfo] = useState("");
-  const isLogin = window.localStorage.getItem("isLogin");
-
-  console.log(isLogin);
-  if (isLogin !== "TRUE") navigate("/");
 
   useEffect(() => {
+    const accessToken = Common.getAccessToken();
     const memberInfo = async () => {
-      const rsp = await AxiosApi.memberGet(); // 전체 조회
-      if (rsp.status === 200) setMemberInfo(rsp.data);
-      console.log(rsp.data);
+      try {
+        const rsp = await AxiosApi.memberGet(); // 전체 조회
+        if (rsp.status === 200) setMemberInfo(rsp.data);
+      } catch (e) {
+        if (e.response.status === 401) {
+          await Common.handleUnauthorized();
+          const newToken = Common.getAccessToken();
+          if (newToken !== accessToken) {
+            const rsp = await AxiosApi.memberGet(); // 전체 조회
+            if (rsp.status === 200) setMemberInfo(rsp.data);
+          }
+        }
+      }
     };
     memberInfo();
   }, []);
@@ -89,7 +96,7 @@ const Members = () => {
               <MemberName>이름: {member.name}</MemberName>
               <MemberEmail>이메일: {member.email}</MemberEmail>
               <MemberJoinDate>
-                가입일: {formatDate(member.regDate)}
+                가입일: {Common.formatDate(member.regDate)}
               </MemberJoinDate>
             </UserInfo>
           </MemberInfoWrapper>

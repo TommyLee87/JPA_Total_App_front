@@ -1,4 +1,5 @@
 import axios from "axios";
+import Common from "../utils/Common";
 import { KH_DOMAIN } from "../utils/Common";
 
 const AxiosApi = {
@@ -147,11 +148,11 @@ const AxiosApi = {
   },
   // 채팅방 정보
   chatInfo: async (chatId) => {
-    return await axios.get(KH_DOMAIN + `/chat/chatroom/${chatId}`);
+    return await axios.get(Common.KH_DOMAIN + `/chat/chatroom/${chatId}`);
   },
   // 이전 채팅 가져오기
   recentChatLoad: async (roomId) => {
-    return await axios.get(KH_DOMAIN + `/chat/message/${roomId}`);
+    return await axios.get(Common.KH_DOMAIN + `/chat/message/${roomId}`);
   },
 };
 export default AxiosApi;

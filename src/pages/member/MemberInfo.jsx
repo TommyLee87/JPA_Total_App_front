@@ -2,11 +2,10 @@ import { useParams } from "react-router-dom";
 import styled from "styled-components";
 import { useState, useEffect } from "react";
 import AxiosApi from "../../api/AxiosApi";
-import { formatDate } from "../../utils/Common";
+import Common from "../../utils/Common";
 import { storage } from "../../api/firebase";
 import { useContext } from "react";
 import { UserContext } from "../../context/UserStore";
-import Common from "../../utils/Common";
 
 const Container = styled.div`
   padding: 24px;
@@ -70,7 +69,7 @@ const MemberInfo = () => {
   const [member, setMember] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [editName, setEditName] = useState("");
-  const [loginUserEmail, setLoginUserEmail] = useState();
+  const [loginUserEmail, setLoginUserEmail] = useState(""); // 현재 로그인 유저의 이메일
   const [file, setFile] = useState(null);
   const [url, setUrl] = useState("");
   const context = useContext(UserContext);
@@ -86,12 +85,10 @@ const MemberInfo = () => {
           setUrl(rsp.data.image);
         }
         const rsp2 = await AxiosApi.memberGetInfo();
-        if (rsp2.status === 200) {
-          console.log(rsp2.data);
-          setLoginUserEmail(rsp2.data.email);
-        }
+        console.log(rsp2.data.email);
+        setLoginUserEmail(rsp2.data.email);
       } catch (error) {
-        if (ErrorEvent.response.status === 401) {
+        if (error.response.status === 401) {
           await Common.handleUnauthorized();
           const newToken = Common.getAccessToken();
           if (newToken !== accessToken) {
@@ -119,8 +116,8 @@ const MemberInfo = () => {
   // 회원 정보 업데이트 Axios 호출
   const handleSubmit = async (e) => {
     const accessToken = Common.getAccessToken();
+    e.preventDefault();
     try {
-      e.preventDefault();
       const rsp = await AxiosApi.memberUpdate(email, editName, url);
       if (rsp.status === 200) {
         setEditMode(false);
@@ -133,7 +130,7 @@ const MemberInfo = () => {
       }
     } catch (error) {
       if (error.response.status === 401) {
-        await AxiosApi.handleUnauthorized();
+        await Common.handleUnauthorized();
         const newToken = Common.getAccessToken();
         if (newToken !== accessToken) {
           const rsp = await AxiosApi.memberUpdate(email, editName, url);
@@ -192,10 +189,10 @@ const MemberInfo = () => {
             <Label>Email : {member.email}</Label>
           </Field>
           <Field>
-            <Label>가입일 : {formatDate(member.regDate)}</Label>
+            <Label>가입일 : {Common.formatDate(member.regDate)}</Label>
           </Field>
           {/* 현재 사용자가 로그인한 사용자인 경우에만 편집 버튼 표시 */}
-          {setLoginUserEmail && (
+          {email === loginUserEmail && (
             <SubmitButton onClick={() => setEditMode(true)}>편집</SubmitButton>
           )}
         </>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
-import { KH_SOCKET_URL } from "../../utils/Common";
+import Common from "../../utils/Common";
 import { useParams, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import AxiosApi from "../../api/AxiosApi";
@@ -77,14 +77,13 @@ const CloseButton = styled.button`
 `;
 
 const Chatting = () => {
-  const [socketConnected, setSocketConnected] = useState(false); // 소켓 연결이 안되어 있으면 false
+  const [socketConnected, setSocketConnected] = useState(false);
   const [inputMsg, setInputMsg] = useState("");
   const [chatList, setChatList] = useState([]);
   const { roomId } = useParams();
-  const [chatName, setChatName] = useState("");
-  const userName = window.localStorage.getItem("name"); // 로컬스토리지에 닉네임 전달됨. 바로 닉네임 받으려고
-  const sender = window.localStorage.getItem("email");
-  const ws = useRef(null); //기본 값은 null, 아무 방이 없을 경우
+  const [sender, setSender] = useState("");
+  const [roomName, setRoomName] = useState(""); // 채팅방 이름
+  const ws = useRef(null);
   const navigate = useNavigate(); // useNavigate 훅 추가
 
   const onChangMsg = (e) => {
@@ -92,7 +91,10 @@ const Chatting = () => {
   };
 
   const onEnterKey = (e) => {
-    if (e.key === "Enter") onClickMsgSend(e);
+    if (e.key === "Enter" && inputMsg.trim() !== "") {
+      e.preventDefault();
+      onClickMsgSend(e);
+    }
   };
 
   const onClickMsgSend = (e) => {
@@ -101,7 +103,6 @@ const Chatting = () => {
         type: "TALK",
         roomId: roomId,
         sender: sender,
-        senderName: userName, // 닉네임도 보여지게끔
         message: inputMsg,
       })
     );
@@ -113,43 +114,59 @@ const Chatting = () => {
         type: "CLOSE",
         roomId: roomId,
         sender: sender,
-        senderName: userName,
-        message: " - ",
+        message: "종료 합니다.",
       })
     );
     ws.current.close();
     navigate("/Chat");
   };
-  // 이전 채팅 내용을 가져오는 함수
-  const loadPreviousChat = () => {
-    AxiosApi.recentChatLoad(roomId).then((res) => {
-      const recentMessages = res.data;
-      setChatList(recentMessages);
-    });
-  };
+
+  useEffect(() => {
+    // 이메일로 회원 정보 가져 오기
+    const getMember = async () => {
+      try {
+        const rsp = await AxiosApi.memberGetInfo();
+        console.log(rsp.data.name);
+        setSender(rsp.data.name);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getMember();
+  });
+
+  useEffect(() => {
+    // 채팅방 정보 가져 오기
+    const getChatRoom = async () => {
+      try {
+        const rsp = await AxiosApi.chatDetail(roomId);
+        console.log(rsp.data.name);
+        setRoomName(rsp.data.name);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    getChatRoom();
+  });
 
   useEffect(() => {
     console.log("방번호 : " + roomId);
     if (!ws.current) {
-      // current가 없으면 새로운 웹소켓을 만든다
-      ws.current = new WebSocket(KH_SOCKET_URL);
+      ws.current = new WebSocket(Common.KH_SOCKET_URL);
       ws.current.onopen = () => {
-        console.log("connected to " + KH_SOCKET_URL);
-        setSocketConnected(true); //소켓 연결시 true
+        console.log("connected to " + Common.KH_SOCKET_URL);
+        setSocketConnected(true);
       };
     }
     if (socketConnected) {
       ws.current.send(
         JSON.stringify({
-          //json으로 데이터 보냄
           type: "ENTER",
           roomId: roomId,
           sender: sender,
-          senderName: userName,
-          message: " - ",
+          message: "처음으로 접속 합니다.",
         })
       );
-      // loadPreviousChat();
     }
     ws.current.onmessage = (evt) => {
       const data = JSON.parse(evt.data);
@@ -168,30 +185,13 @@ const Chatting = () => {
     }
   }, [chatList]);
 
-  useEffect(() => {
-    fetchChatName();
-    console.log(chatName);
-  }, []);
-
-  const fetchChatName = async () => {
-    try {
-      const res = await AxiosApi.chatInfo(roomId);
-      console.log("결과결과:" + res.data.name);
-      if (res.data !== null) {
-        setChatName(res.data.name);
-      }
-    } catch (err) {
-      console.log(err);
-    }
-  };
-
   return (
     <ChatContainer>
-      <ChatHeader>채팅방 {roomId}</ChatHeader>
+      <ChatHeader>채팅방 {roomName}</ChatHeader>
       <MessagesContainer ref={chatContainerRef}>
         {chatList.map((chat, index) => (
           <Message key={index} isSender={chat.sender === sender}>
-            {`${chat.senderName} > ${chat.message}`}
+            {`${chat.sender} > ${chat.message}`}
           </Message>
         ))}
       </MessagesContainer>

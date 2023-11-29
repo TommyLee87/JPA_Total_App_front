@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import styled from "styled-components";
 import { FaChevronRight } from "react-icons/fa";
 
@@ -43,6 +43,12 @@ const LinkStyled = styled(Link)`
 `;
 
 const Setting = () => {
+  const navigate = useNavigate();
+  const handleLogout = () => {
+    localStorage.removeItem("accessToken");
+    navigate("/");
+  };
+
   return (
     <Container>
       <Title>설정</Title>
@@ -69,6 +75,12 @@ const Setting = () => {
             <LinkStyled to="/themesetting">
               <FaChevronRight />
             </LinkStyled>
+          </LinkContainer>
+        </ContainerListItem>
+        <ContainerListItem>
+          <LinkContainer onClick={handleLogout}>
+            <span>로그 아웃</span>
+            <FaChevronRight />
           </LinkContainer>
         </ContainerListItem>
       </ContainerList>

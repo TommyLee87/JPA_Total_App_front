@@ -3,10 +3,10 @@ import axios from "axios";
 import "moment/locale/ko"; // 한글 로컬라이제이션
 moment.locale("ko"); // 한글 설정 적용
 
-const Common = {
-  KH_DOMAIN: "http://localhost:8111",
-  KH_SOCKET_URL: "ws://localhost:8111/ws/chat",
+export const KH_DOMAIN = "http://localhost:8111";
+export const KH_SOCKET_URL = "ws://localhost:8111/ws/chat";
 
+const Common = {
   timeFromNow: (timestamp) => {
     return moment(timestamp).fromNow();
   },
@@ -27,7 +27,7 @@ const Common = {
   setAccessToken: (token) => {
     localStorage.setItem("accessToken", token);
   },
-  getRefeshToken: () => {
+  getRefreshToken: () => {
     return localStorage.getItem("refreshToken");
   },
 
