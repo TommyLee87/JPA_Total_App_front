@@ -25,7 +25,7 @@ import AxiosApi from "../api/AxiosApi";
 
 const Layout = () => {
   const context = useContext(UserContext);
-  const { color, name } = context;
+  const { color, name, setName } = context;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
   const email = localStorage.getItem("email");
@@ -41,8 +41,9 @@ const Layout = () => {
   useEffect(() => {
     const getMember = async () => {
       try {
-        const rsp = await AxiosApi.memberGetOne();
+        const rsp = await AxiosApi.memberGetOne(); // 한명의 프로필 정보 가져옴.(닉네임 포함, 이걸 뽑아서...)
         setMember(rsp.data);
+        setName(rsp.data.name); // ...여기에 닉네임 전달
       } catch (e) {
         console.error(e);
       }
