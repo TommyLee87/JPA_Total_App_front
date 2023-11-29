@@ -77,14 +77,14 @@ const CloseButton = styled.button`
 `;
 
 const Chatting = () => {
-  const [socketConnected, setSocketConnected] = useState(false);
+  const [socketConnected, setSocketConnected] = useState(false); // 소켓 연결이 안되어 있으면 false
   const [inputMsg, setInputMsg] = useState("");
   const [chatList, setChatList] = useState([]);
   const { roomId } = useParams();
   const [chatName, setChatName] = useState("");
-  const userName = window.localStorage.getItem("name");
+  const userName = window.localStorage.getItem("name"); // 로컬스토리지에 닉네임 전달됨. 바로 닉네임 받으려고
   const sender = window.localStorage.getItem("email");
-  const ws = useRef(null);
+  const ws = useRef(null); //기본 값은 null, 아무 방이 없을 경우
   const navigate = useNavigate(); // useNavigate 훅 추가
 
   const onChangMsg = (e) => {
@@ -101,7 +101,7 @@ const Chatting = () => {
         type: "TALK",
         roomId: roomId,
         sender: sender,
-        senderName: userName,
+        senderName: userName, // 닉네임도 보여지게끔
         message: inputMsg,
       })
     );
@@ -114,32 +114,42 @@ const Chatting = () => {
         roomId: roomId,
         sender: sender,
         senderName: userName,
-        message: "종료 합니다.",
+        message: " - ",
       })
     );
     ws.current.close();
     navigate("/Chat");
   };
+  // 이전 채팅 내용을 가져오는 함수
+  const loadPreviousChat = () => {
+    AxiosApi.recentChatLoad(roomId).then((res) => {
+      const recentMessages = res.data;
+      setChatList(recentMessages);
+    });
+  };
 
   useEffect(() => {
     console.log("방번호 : " + roomId);
     if (!ws.current) {
+      // current가 없으면 새로운 웹소켓을 만든다
       ws.current = new WebSocket(KH_SOCKET_URL);
       ws.current.onopen = () => {
         console.log("connected to " + KH_SOCKET_URL);
-        setSocketConnected(true);
+        setSocketConnected(true); //소켓 연결시 true
       };
     }
     if (socketConnected) {
       ws.current.send(
         JSON.stringify({
+          //json으로 데이터 보냄
           type: "ENTER",
           roomId: roomId,
           sender: sender,
           senderName: userName,
-          message: "처음으로 접속 합니다.",
+          message: " - ",
         })
       );
+      // loadPreviousChat();
     }
     ws.current.onmessage = (evt) => {
       const data = JSON.parse(evt.data);
@@ -181,7 +191,7 @@ const Chatting = () => {
       <MessagesContainer ref={chatContainerRef}>
         {chatList.map((chat, index) => (
           <Message key={index} isSender={chat.sender === sender}>
-            {`${chat.sender} > ${chat.message}`}
+            {`${chat.senderName} > ${chat.message}`}
           </Message>
         ))}
       </MessagesContainer>
