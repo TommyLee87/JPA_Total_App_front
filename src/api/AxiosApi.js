@@ -13,7 +13,13 @@ const AxiosApi = {
   },
   //회원 전체 조회
   memberGet: async () => {
-    return await axios.get(KH_DOMAIN + `/users/list`);
+    const accessToken = localStorage.getItem("accessToken");
+    return await axios.get(KH_DOMAIN + `/users/list`, {
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + accessToken,
+      },
+    });
   },
   // 회원 조회
   memberGetOne: async () => {

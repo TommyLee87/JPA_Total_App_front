@@ -6,6 +6,7 @@ import { formatDate } from "../../utils/Common";
 import { storage } from "../../api/firebase";
 import { useContext } from "react";
 import { UserContext } from "../../context/UserStore";
+import Common from "../../utils/Common";
 
 const Container = styled.div`
   padding: 24px;
@@ -65,32 +66,45 @@ const SubmitButton = styled.button`
 `;
 
 const MemberInfo = () => {
-  const { email } = useParams();
+  const { email } = useParams(); // URL 파라미터에서 email 값 추출 (회원 리스트에서 클릭한 회원의 이메일)
   const [member, setMember] = useState("");
   const [editMode, setEditMode] = useState(false);
   const [editName, setEditName] = useState("");
-  const [isCurrentUser, setIsCurrentUser] = useState(false);
+  const [loginUserEmail, setLoginUserEmail] = useState();
   const [file, setFile] = useState(null);
   const [url, setUrl] = useState("");
   const context = useContext(UserContext);
   const { setName } = context;
 
   useEffect(() => {
+    const accessToken = Common.getAccessToken();
     const memberInfo = async () => {
-      const rsp = await AxiosApi.memberGetOne(email);
-      if (rsp.status === 200) {
-        setMember(rsp.data);
-        setUrl(rsp.data.image);
+      try {
+        const rsp = await AxiosApi.memberGetOne(email);
+        if (rsp.status === 200) {
+          setMember(rsp.data);
+          setUrl(rsp.data.image);
+        }
+        const rsp2 = await AxiosApi.memberGetInfo();
+        if (rsp2.status === 200) {
+          console.log(rsp2.data);
+          setLoginUserEmail(rsp2.data.email);
+        }
+      } catch (error) {
+        if (ErrorEvent.response.status === 401) {
+          await Common.handleUnauthorized();
+          const newToken = Common.getAccessToken();
+          if (newToken !== accessToken) {
+            const rsp = await AxiosApi.memberGetOne(email);
+            if (rsp.status === 200) {
+              setMember(rsp.data);
+              setUrl(rsp.data.image);
+            }
+          }
+        }
       }
     };
     memberInfo();
-
-    // 로컬스토리지에서 로그인한 사용자 정보를 가져옵니다.
-    const loginUserEmail = localStorage.getItem("email");
-    // 로그인한 사용자와 글쓴이가 같은지 비교합니다.
-    if (loginUserEmail === email) {
-      setIsCurrentUser(true);
-    }
   }, [email]);
 
   // 입력 필드 변경 처리
@@ -104,15 +118,35 @@ const MemberInfo = () => {
 
   // 회원 정보 업데이트 Axios 호출
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    const rsp = await AxiosApi.memberUpdate(email, editName, url);
-    if (rsp.status === 200) {
-      setEditMode(false);
-      setName(editName);
-      const rsp = await AxiosApi.memberGetOne(email);
+    const accessToken = Common.getAccessToken();
+    try {
+      e.preventDefault();
+      const rsp = await AxiosApi.memberUpdate(email, editName, url);
       if (rsp.status === 200) {
-        setMember(rsp.data);
-        setUrl(rsp.data.image);
+        setEditMode(false);
+        setName(editName);
+        const rsp = await AxiosApi.memberGetOne(email);
+        if (rsp.status === 200) {
+          setMember(rsp.data);
+          setUrl(rsp.data.image);
+        }
+      }
+    } catch (error) {
+      if (error.response.status === 401) {
+        await AxiosApi.handleUnauthorized();
+        const newToken = Common.getAccessToken();
+        if (newToken !== accessToken) {
+          const rsp = await AxiosApi.memberUpdate(email, editName, url);
+          if (rsp.status === 200) {
+            setEditMode(false);
+            setName(editName);
+            const rsp = await AxiosApi.memberGetOne(email);
+            if (rsp.status === 200) {
+              setMember(rsp.data);
+              setUrl(rsp.data.image);
+            }
+          }
+        }
       }
     }
   };
@@ -161,7 +195,7 @@ const MemberInfo = () => {
             <Label>가입일 : {formatDate(member.regDate)}</Label>
           </Field>
           {/* 현재 사용자가 로그인한 사용자인 경우에만 편집 버튼 표시 */}
-          {isCurrentUser && (
+          {setLoginUserEmail && (
             <SubmitButton onClick={() => setEditMode(true)}>편집</SubmitButton>
           )}
         </>

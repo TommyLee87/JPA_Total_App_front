@@ -7,7 +7,7 @@ const Home = () => {
   const onClickBtn = (num) => {
     switch (num) {
       case 1:
-        navigate("/members");
+        navigate("/users/list");
         break;
       case 2:
         navigate("/news");
