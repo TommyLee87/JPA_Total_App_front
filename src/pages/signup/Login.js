@@ -61,13 +61,19 @@ const Login = () => {
   };
   const onClickLogin = async () => {
     //로그인을 위한 axios 호출
-    const res = await AxiosApi.memberLogin(inputEmail, inputPw);
-    console.log(res.data);
-    if (res.data.grantType === "Bearer") {
-      localStorage.setItem("accessToken", res.data.accessToken);
-      localStorage.setItem("refreshToken", res.data.refreshToken);
-      navigate("/home");
-    } else {
+    try {
+      const res = await AxiosApi.memberLogin(inputEmail, inputPw);
+      console.log(res.data);
+      if (res.data.grantType === "Bearer") {
+        localStorage.setItem("accessToken", res.data.accessToken);
+        localStorage.setItem("refreshToken", res.data.refreshToken);
+        navigate("/home");
+      } else {
+        setModalOpen(true);
+        setModalContent("아이디 및 패스워드를 재확인해 주세요.^^");
+      }
+    } catch (err) {
+      console.log(err);
       setModalOpen(true);
       setModalContent("아이디 및 패스워드를 재확인해 주세요.^^");
     }

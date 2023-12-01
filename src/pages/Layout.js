@@ -7,6 +7,7 @@ import {
   UserIdAndName,
   StyledMenuList,
   StyledMenuItem,
+  Addr,
   MenuIcon,
   StyledLink,
   Dummy,
@@ -20,15 +21,16 @@ import { BiCameraMovie } from "react-icons/bi";
 import { CgProfile } from "react-icons/cg";
 import { useNavigate } from "react-router-dom";
 import AxiosApi from "../api/AxiosApi";
+import useWeather from "../hooks/useWeather";
 
 // 사이드바 메뉴를 구성 합니다.
 
 const Layout = () => {
   const context = useContext(UserContext);
   const { color, name, setName } = context;
+  const { addr, temp } = useWeather(); // 커스텀 훅 사용
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const navigate = useNavigate();
-  const email = localStorage.getItem("email");
   const [member, setMember] = useState({});
 
   const onClickLeft = () => {
@@ -61,6 +63,10 @@ const Layout = () => {
             <GiHamburgerMenu size={32} color="white" onClick={onClickLeft} />
           )}
         </div>
+        <div className="welcome">
+          <span style={{ fontWeight: "bold" }}>{member.name}</span>님
+          환영합니다.
+        </div>
         <div className="setting">
           <FiSettings size={32} color="white" onClick={onClickRight} />
         </div>
@@ -79,6 +85,9 @@ const Layout = () => {
                 <span>{member.email}</span>
               </UserIdAndName>
             </UserContainer>
+            <Addr>
+              {addr}, {temp}
+            </Addr>
             <StyledMenuItem>
               <MenuIcon>
                 <FaHome />
